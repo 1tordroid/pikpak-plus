@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "com.tordroid.plus",
+        "sha256_cert_fingerprints": ["26:64:1F:6C:E5:92:D0:01:61:ED:87:C0:CF:A1:15:6E:CE:86:DE:A7:74:D5:B3:C6:E1:E6:12:80:A2:F5:BD:30"]
+      }
+    }]
