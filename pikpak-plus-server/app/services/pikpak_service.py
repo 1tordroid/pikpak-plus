@@ -567,6 +567,28 @@ class PikPakService:
 
         return await self._execute_with_retry(_do_create_share)
 
+    async def get_file_details(self, file_id: str) -> dict:
+        """Get file details, including playable links and transcoded medias"""
+        if not self.client:
+            raise RuntimeError(PIKPAK_CLIENT_NOT_INITIALIZED)
+
+        async def _do_get_file():
+            return await self.client.get_download_url(file_id)
+
+        return await self._execute_with_retry(_do_get_file)
+
+    async def list_folder(self, parent_id: str, page_token: Optional[str] = None) -> dict:
+        """List completed, non-trashed files in a folder (one page)"""
+        if not self.client:
+            raise RuntimeError(PIKPAK_CLIENT_NOT_INITIALIZED)
+
+        async def _do_list():
+            return await self.client.file_list(
+                size=100, parent_id=parent_id, next_page_token=page_token
+            )
+
+        return await self._execute_with_retry(_do_list)
+
     async def delete_task(self, task_id: str, delete_files: bool = False):
         """Delete a task from PikPak"""
         if not self.client:
