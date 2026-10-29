@@ -2,13 +2,14 @@
 Gunicorn configuration file for PikPak Plus Server
 """
 import multiprocessing
+import os
 
 # Server socket
 bind = "0.0.0.0:5000"
 backlog = 2048
 
 # Worker processes
-workers = 2
+workers = int(os.getenv("GUNICORN_WORKERS", "2"))
 threads = 4
 worker_class = "gthread"
 worker_connections = 1000

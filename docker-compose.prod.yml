@@ -1,0 +1,86 @@
+# Tordroid Plus production stack: pulls images built by
+# .github/workflows/docker-images.yml instead of building on the server.
+#
+#   docker compose -f docker-compose.prod.yml pull
+#   docker compose -f docker-compose.prod.yml up -d
+#
+# Reads settings from .env next to this file (see example.env).
+
+x-server-env: &server-env
+  REDIS_URL: redis://redis:6379/0
+  API_URL_INTERNAL: http://server:5000
+  USER: ${user}
+  PASSWD: ${passwd}
+  SUPABASE_URL: ${SUPABASE_URL}
+  SUPABASE_KEY: ${SUPABASE_KEY}
+  PROXY: ${PROXY:-}
+  MAX_FILE_SIZE_GB: ${MAX_FILE_SIZE_GB:-25}
+  TASK_STATUS_UPDATE_INTERVAL_MINUTES: ${TASK_STATUS_UPDATE_INTERVAL_MINUTES:-15}
+  CLEANUP_INTERVAL_HOURS: ${CLEANUP_INTERVAL_HOURS:-24}
+  TASK_CACHE_TTL_SECONDS: ${TASK_CACHE_TTL_SECONDS:-300}
+  QUOTA_CACHE_TTL_SECONDS: ${QUOTA_CACHE_TTL_SECONDS:-10800}
+  VIP_INFO_CACHE_TTL_SECONDS: ${VIP_INFO_CACHE_TTL_SECONDS:-604800}
+  DEFAULT_PAGE_SIZE: ${DEFAULT_PAGE_SIZE:-25}
+  WEBDAV_GENERATION_INTERVAL_HOURS: ${WEBDAV_GENERATION_INTERVAL_HOURS:-24}
+  JWT_SECRET_KEY: ${JWT_SECRET_KEY}
+  JWT_EXPIRATION_HOURS: ${JWT_EXPIRATION_HOURS:-24}
+  ADMIN_EMAIL: ${ADMIN_EMAIL}
+  ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+  PASSWORD_RESET_TOKEN_EXPIRATION_HOURS: ${PASSWORD_RESET_TOKEN_EXPIRATION_HOURS:-1}
+  FAMILY_INVITE_CODE: ${FAMILY_INVITE_CODE}
+  # Small servers: 1 gunicorn worker is plenty for a family
+  GUNICORN_WORKERS: ${GUNICORN_WORKERS:-1}
+
+services:
+  web:
+    image: ghcr.io/1tordroid/tordroid-plus-web:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    depends_on:
+      - server
+    ports:
+      - "${APP_PORT:-3000}:3000"
+    environment:
+      API_URL_INTERNAL: http://server:5000
+      NEXT_PUBLIC_API_URL: /api
+      NODE_OPTIONS: --max-old-space-size=256
+
+  server:
+    image: ghcr.io/1tordroid/tordroid-plus-server:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    depends_on:
+      - redis
+    environment: *server-env
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health/ready"]
+      interval: 2m
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  worker:
+    image: ghcr.io/1tordroid/tordroid-plus-server:${IMAGE_TAG:-latest}
+    command: celery -A app.celery_app.celery_app worker --loglevel=info --concurrency=1
+    restart: unless-stopped
+    depends_on:
+      - redis
+      - server
+    environment: *server-env
+
+  beat:
+    image: ghcr.io/1tordroid/tordroid-plus-server:${IMAGE_TAG:-latest}
+    command: celery -A app.celery_app.celery_app beat --loglevel=info
+    restart: unless-stopped
+    depends_on:
+      - redis
+      - server
+    environment: *server-env
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: redis-server --maxmemory 64mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+
+volumes:
+  redis_data:
