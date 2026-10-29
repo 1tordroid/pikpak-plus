@@ -1,0 +1,79 @@
+name: Docker images
+
+# Builds the web and server images on GitHub (native amd64 + arm64 runners)
+# and publishes them to GHCR, so the deploy server only pulls and runs them.
+
+on:
+  push:
+    branches:
+      - tordroid-plus
+    paths:
+      - "pikpak-plus-client/**"
+      - "pikpak-plus-server/**"
+      - ".github/workflows/docker-images.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  IMAGE_PREFIX: ghcr.io/${{ github.repository_owner }}/tordroid-plus
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        component: [web, server]
+        platform:
+          - { arch: amd64, runner: ubuntu-24.04 }
+          - { arch: arm64, runner: ubuntu-24.04-arm }
+    runs-on: ${{ matrix.platform.runner }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push ${{ matrix.component }} (${{ matrix.platform.arch }})
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.component == 'web' && './pikpak-plus-client' || './pikpak-plus-server' }}
+          platforms: linux/${{ matrix.platform.arch }}
+          build-args: |
+            NEXT_PUBLIC_API_URL=/api
+            API_URL_INTERNAL=http://server:5000
+          push: true
+          tags: ${{ env.IMAGE_PREFIX }}-${{ matrix.component }}:${{ github.sha }}-${{ matrix.platform.arch }}
+          cache-from: type=gha,scope=${{ matrix.component }}-${{ matrix.platform.arch }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.component }}-${{ matrix.platform.arch }}
+
+  manifest:
+    needs: build
+    runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        component: [web, server]
+    steps:
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish multi-arch tags
+        run: |
+          image="${IMAGE_PREFIX}-${{ matrix.component }}"
+          docker buildx imagetools create \
+            -t "${image}:latest" \
+            -t "${image}:${GITHUB_SHA}" \
+            "${image}:${GITHUB_SHA}-amd64" \
+            "${image}:${GITHUB_SHA}-arm64"
