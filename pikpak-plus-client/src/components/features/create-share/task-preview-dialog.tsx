@@ -16,6 +16,7 @@ import copy from "copy-to-clipboard";
 import { ShareSection } from "./share-section";
 import { FileDetails } from "./file-details";
 import { TaskStatus } from "./task-status";
+import { WatchSection } from "../player/watch-section";
 
 interface TaskPreviewDialogProps {
   task: SupabaseTaskRecord | null;
@@ -56,6 +57,7 @@ export function TaskPreviewDialog({
             copiedId={copiedId}
           />
           <TaskStatus task={task} />
+          <WatchSection task={task} />
           <ShareSection
             task={task}
             copyToClipboard={copyToClipboard}
