@@ -3,12 +3,12 @@
 # Adds swap, installs Docker, opens HTTP/HTTPS in the local firewall and
 # fetches the Tordroid Plus deploy files. Safe to re-run.
 #
-#   curl -fsSL https://raw.githubusercontent.com/1tordroid/pikpak-plus/tordroid-plus/deploy/setup-server.sh | sudo bash
+#   curl -fsSL https://raw.githubusercontent.com/1tordroid/pikpak-plus/main/deploy/setup-server.sh | sudo bash
 set -euo pipefail
 
 SWAP_SIZE="${SWAP_SIZE:-4G}"
 APP_DIR="${APP_DIR:-/opt/tordroid-plus}"
-REPO_RAW="https://raw.githubusercontent.com/1tordroid/pikpak-plus/tordroid-plus"
+REPO_RAW="https://raw.githubusercontent.com/1tordroid/pikpak-plus/main"
 
 if [ "$(id -u)" -ne 0 ]; then
   echo "Run as root (sudo)." >&2

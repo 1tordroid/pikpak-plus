@@ -6,6 +6,7 @@ name: Docker images
 on:
   push:
     branches:
+      - main
       - tordroid-plus
     paths:
       - "pikpak-plus-client/**"
