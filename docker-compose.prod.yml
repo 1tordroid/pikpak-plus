@@ -38,7 +38,8 @@ services:
     depends_on:
       - server
     ports:
-      - "${APP_PORT:-3000}:3000"
+      # Local only; the public site goes through the https (Caddy) service
+      - "127.0.0.1:${APP_PORT:-3000}:3000"
     environment:
       API_URL_INTERNAL: http://server:5000
       NEXT_PUBLIC_API_URL: /api
@@ -75,6 +76,22 @@ services:
       - server
     environment: *server-env
 
+  # Public HTTPS with an automatic Let's Encrypt certificate.
+  # Enable with COMPOSE_PROFILES=https and SITE_DOMAIN=<your domain> in .env
+  https:
+    image: caddy:2-alpine
+    profiles: ["https"]
+    restart: unless-stopped
+    command: caddy reverse-proxy --from ${SITE_DOMAIN:-localhost} --to web:3000
+    depends_on:
+      - web
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - caddy_data:/data
+      - caddy_config:/config
+
   redis:
     image: redis:7-alpine
     restart: unless-stopped
@@ -84,3 +101,5 @@ services:
 
 volumes:
   redis_data:
+  caddy_data:
+  caddy_config:
