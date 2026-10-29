@@ -92,6 +92,18 @@ services:
       - caddy_data:/data
       - caddy_config:/config
 
+  # Cloudflare Tunnel: public site with no open inbound ports.
+  # Enable with COMPOSE_PROFILES=tunnel; needs ./cloudflared/{config.yml,<id>.json}
+  tunnel:
+    image: cloudflare/cloudflared:latest
+    profiles: ["tunnel"]
+    restart: unless-stopped
+    command: tunnel --no-autoupdate --config /home/nonroot/.cloudflared/config.yml run
+    depends_on:
+      - web
+    volumes:
+      - ./cloudflared:/home/nonroot/.cloudflared
+
   redis:
     image: redis:7-alpine
     restart: unless-stopped
