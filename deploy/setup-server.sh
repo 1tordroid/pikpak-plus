@@ -36,8 +36,14 @@ id "$SUDO_USER_NAME" >/dev/null 2>&1 && usermod -aG docker "$SUDO_USER_NAME"
 
 echo "==> Firewall (Oracle Ubuntu images block everything but SSH via iptables)"
 for port in 80 443; do
-  if ! iptables -C INPUT -p tcp --dport "$port" -j ACCEPT 2>/dev/null; then
-    iptables -I INPUT 6 -m state --state NEW -p tcp --dport "$port" -j ACCEPT
+  if ! iptables -C INPUT -m state --state NEW -p tcp --dport "$port" -j ACCEPT 2>/dev/null; then
+    # Insert just above the image's catch-all REJECT rule (or append if none)
+    reject_line=$(iptables -L INPUT -n --line-numbers | awk '/REJECT/ {print $1; exit}')
+    if [ -n "$reject_line" ]; then
+      iptables -I INPUT "$reject_line" -m state --state NEW -p tcp --dport "$port" -j ACCEPT
+    else
+      iptables -A INPUT -m state --state NEW -p tcp --dport "$port" -j ACCEPT
+    fi
   fi
 done
 if command -v netfilter-persistent >/dev/null 2>&1; then
