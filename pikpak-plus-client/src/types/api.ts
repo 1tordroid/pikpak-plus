@@ -508,3 +508,41 @@ export interface SchedulerJob {
 export interface SchedulerStatus {
   jobs: SchedulerJob[];
 }
+
+// ============================================================================
+// Media Playback Types
+// ============================================================================
+
+export type MediaStream = {
+  label: string;
+  url: string;
+  width: number | null;
+  height: number | null;
+  codec: string;
+  is_origin: boolean;
+  is_default: boolean;
+};
+
+export type MediaVideoSummary = {
+  id: string;
+  name: string;
+  path: string;
+  size: number;
+  mime_type: string;
+  thumbnail: string;
+};
+
+export type MediaFileResponse = MediaVideoSummary & {
+  type: "file";
+  is_video: boolean;
+  streams: MediaStream[];
+};
+
+export type MediaFolderResponse = {
+  type: "folder";
+  id: string;
+  name: string;
+  videos: MediaVideoSummary[];
+};
+
+export type MediaResponse = MediaFileResponse | MediaFolderResponse;
