@@ -56,3 +56,10 @@ cache_dir
 #pikpak token
 pikpak_tokens.json
 pikpak_login_state.json
+# Android TWA local files
+android-twa/local.properties
+android-twa/build/
+android-twa/app/build/
+android-twa/.gradle/
+*.keystore
+*.jks
