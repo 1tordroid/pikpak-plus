@@ -8,7 +8,7 @@
   A private family portal for a shared PikPak Premium account: torrent downloads,
   in-app video playback with VLC hand-off, and read-only WebDAV access.
   <br />
-  <a href="https://tordroid.com"><strong>tordroid.com</strong></a>
+  <a href="https://plus.tordroid.com"><strong>plus.tordroid.com</strong></a>
 </p>
 
 ## Features
